@@ -1,0 +1,126 @@
+# Extraction report: baseline_dataset-text
+
+361 receipts scored (of 361 in the dataset).
+
+## Accuracy
+
+| Field | Exact string | Same value | Near match |
+|---|---|---|---|
+| company | 62.3% | 63.2% | 64.3% |
+| date | 97.0% | 97.5% | 97.5% |
+| address | 0.6% | 1.7% | 6.1% |
+| total | 73.4% | 87.8% | 87.8% |
+| **all four fields** | 0.3% | 0.8% | 2.8% |
+
+Same value: equal amounts, equal dates, text equal ignoring case, spacing and punctuation.
+Near match: text at least 90% similar; allows for typos in the dataset's own labels.
+
+## Review routing
+
+A receipt is auto-accepted when validation raises no flag, and sent to a person otherwise.
+Validation never sees the labels.
+
+**Judged on date and total**
+
+| Queue | Receipts | Correct |
+|---|---|---|
+| Auto-accepted | 355 (98.3%) | 86.8% |
+| Sent to review | 6 (1.7%) | 50.0% |
+
+Of 50 receipts with a wrong value, review caught 3 (6.0%).
+
+**Judged on all four fields**
+
+| Queue | Receipts | Correct |
+|---|---|---|
+| Auto-accepted | 355 (98.3%) | 0.8% |
+| Sent to review | 6 (1.7%) | 0.0% |
+
+Of 358 receipts with a wrong value, review caught 6 (1.7%).
+
+## Flags raised
+
+| Flag | Receipts |
+|---|---|
+| total:no_total_label | 5 |
+| date:missing | 1 |
+
+## Wrong values
+
+### company: 133 wrong
+
+| Receipt | Extracted | Label | Flags |
+|---|---|---|---|
+| X51005230605 | ALSERKAM ENTERPRISE | PETRON BKT LANJAN SB |  |
+| X51005268408 | TAMAN BERKELEY | 99 SPEED MART S/B |  |
+| X51005288570 | CORPORATION S/B | SECURE PARKING CORPORATION S/B | total:no_total_label |
+| X51005337867 | OLDTOWN WHITE COFFEE | OLD TOWN KOPITAM SND BHD |  |
+| X51005361906 | TEO HENG STATIONERY & BOOKS | TED HENG STATIONERY & BOOKS |  |
+| X51005442322 | RESTAURANT | GRAND COMPANIONS SDN BHD |  |
+| X51005442388 | CONTENTO (JM0761170-K) | CONTENTO |  |
+| X51005444044 | TAMAN BERKELEY | 99 SPEED MART S/B |  |
+| X51005444046 | CASHIER : RAJA NUR  13:43:11 | STAR GROCER SDN BHD |  |
+| X51005447841 | SDN BHD | PASARAYA BORONG PINTAR SDN BHD |  |
+| X51005447842 | SDN BHD | PASARAYA BORONG PINTAR SDN BHD |  |
+| X51005447844 | RESTAURANT JIAWEI | RESTAURANT JIAWEI JIAWEI HOUSE |  |
+| X51005447851 | SDN BHD | PASARAYA BORONG PINTAR SDN BHD |  |
+| X51005447859 | SDN BHD | PASARAYA BORONG PINTAR SDN BHD |  |
+| X51005568855 | POPULAR BOOK | POPULAR BOOK CO. (M) SDN BHD |  |
+| ... and 118 more | | | |
+
+### date: 9 wrong
+
+| Receipt | Extracted | Label | Flags |
+|---|---|---|---|
+| X51005442322 | 03 MAR 18 | 03 MAR 19 |  |
+| X51005568866 | 3 SEPT 2017 | 20/08/17 |  |
+| X51005568887 | 06/04/2017 | 26/04/2017 |  |
+| X51005715006 | 02/7.03 | 20/03/2018 |  |
+| X51006414715 |  | 4/22/2018 | date:missing |
+| X51006619766 | 22/3-42 | 10-01-16 |  |
+| X51007846282 | 18/06/02 | 02/06/2018 |  |
+| X51007846289 | 18/06/07 | 07/06/2018 |  |
+| X51007846310 | 18/06/11 | 11/06/2018 |  |
+
+### address: 355 wrong
+
+| Receipt | Extracted | Label | Flags |
+|---|---|---|---|
+| X00016469670 | NO 2 & 4, BANDAR SERI ALAM, 81750 MASAI | NO 2 & 4, JALAN BAYU 4, BANDAR SERI ALAM, B1750 MASAI, JOHOR |  |
+| X00016469671 | NO 2 & 4, BANDAR SERI ALAM, 81750 MASAI | NO 2 & 4, JALAN BAYU 4, BANDAR SERI ALAM, 81750 MASAI, JOHOR |  |
+| X51005200931 | JM0326955-V, NO.59 JALAN PERMAS 9/5, BANDAR BARU PERMAS JAYA, 81750 JOHOR BAHRU | NO.59 JALAN PERMAS 9/5 BANDAR BARU PERMAS JAYA 81750 JOHOR BAHRU |  |
+| X51005230605 | KM 458.4 BKT LANJAN UTARA, L/RAYA UTARA SELATAN, 47000 SUNGAI BUL | KM 458.4 BKT LANJAN UTARA, L/RAYA UTARA SELATAN,SG BULOH 47000 SUNGAI BUL |  |
+| X51005230616 | FORMERLY KNOWN AS, GOLDEN ARCHES RESTAURANTS SDN BHD, LICENSEE OF MCDONALD'S, LEVEL 6 | LEVEL 6, BANGUNAN TH, DAMANSARA UPTOWN3 NO.3, JALAN SS21/39,47400 PETALING JAYA SELANGOR |  |
+| X51005230621 | LOT 13, SIN LIANHAP SDN BHD, LOT 13, KG BATU 30 | LOT 13, JALAN IPOH, KG BATU 30, ULU YAM LAMA 44300 BTG KALI, SELANGOR. |  |
+| X51005230648 | 47, BANDAR UTAMA BATANG KALI, 44300 BATANG KALI | 47, JALAN MERANTI 1, SEK. 3, BANDAR UTAMA BATANG KALI, 44300 BATANG KALI, SELANGOR. |  |
+| X51005230657 | 47, BANDAR UTAMA BATANG KALI, 44300 BATANG KALI | 47, JALAN MERANTI 1, SEK. 3, BANDAR UTAMA BATANG KALI, 44300 BATANG KALI, SELANGOR. |  |
+| X51005230659 | NO. 5-7, SEKYSEN 4, BATANG KALI | NO. 5-7, JALAN MAHAGONI 7/1, SEKYSEN 4, BANDAR UTAMA, 44300 BATANG KALI, SELANGOR. |  |
+| X51005268275 | NO: 28, BANDAR BUKIT RAJA, KLANG SELANGOR D. E | NO: 28, JALAN ASTANA 1C, BANDAR BUKIT RAJA, 41050 KLANG SELANGOR D.E, MALAYSIA |  |
+| X51005268408 | 41150 KLANG, 1413-SETIA ALAM 2 | LOT P.T. 2811, JALAN ANGSA, TAMAN BERKELEY 41150 KLANG, SELANGOR 1413-SETIA ALAM 2 |  |
+| X51005288570 | RIVERWALK VILLAGE, BATU 3, 51200 KL. | RIVERWALK VILLAGE BATU 3, JALAN IPOH 51200 KL. | total:no_total_label |
+| X51005301666 | NO: 28, BANDAR BUKIT RAJA, KLANG SELANGOR D. E | NO: 28, JALAN ASTANA 1C, BANDAR BUKIT RAJA, 41050 KLANG SELANGOR D.E, MALAYSIA |  |
+| X51005337877 | 22A-1, SECTION 17, 46400 PETALING JAYA, SELANGOR. | 22A-1, JALAN 17/54, SECTION 17, 46400 PETALING JAYA, SELANGOR. |  |
+| X51005361906 | NO. 53, SELANGOR DARUL EHSAN | NO. 53, JALAN BESAR, 45600 BATANG BERJUNTAI SELANGOR DARUL EHSAN |  |
+| ... and 340 more | | | |
+
+### total: 44 wrong
+
+| Receipt | Extracted | Label | Flags |
+|---|---|---|---|
+| X51005230605 | 6.00 | 4.90 |  |
+| X51005230648 | 6.36 | 6.35 |  |
+| X51005268408 | 169.78 | 169.80 |  |
+| X51005288570 | 23.03 | 1.00 | total:no_total_label |
+| X51005444046 | 66.17 | 66.15 |  |
+| X51005745298 | 3.99 | 4.00 |  |
+| X51005764161 | 98.89 | 98.90 |  |
+| X51005806695 | 6.00 | 4.10 | total:no_total_label |
+| X51005806696 | 7.65 | 7.20 |  |
+| X51006008083 | 119.57 | 119.55 |  |
+| X51006008092 | 30.68 | 30.70 |  |
+| X51006327960 | 0.56 | 9.90 |  |
+| X51006328345 | 0.41 | 7.20 |  |
+| X51006334742 | 167.56 | 167.55 |  |
+| X51006388081 | 1.55 | 27.50 |  |
+| ... and 29 more | | | |
+

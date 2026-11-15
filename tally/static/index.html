@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tally</title>
+<style>
+  :root { --bg:#f4f4f3; --panel:#fff; --ink:#1a1a1a; --muted:#6a6a68; --line:#e1e1df;
+          --accent:#2a2a2a; --accent-ink:#fff; --bad:#8f3030; --ok:#2f6a45; --warn:#7a5a2a; --code:#f0f0ee; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141414; --panel:#1b1b1b; --ink:#e6e6e4; --muted:#989896; --line:#2f2f2f;
+            --accent:#d6d6d3; --accent-ink:#161616; --bad:#cf8585; --ok:#86b897; --warn:#c9a877; --code:#252525; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 16px;
+           border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:17px; margin:0 auto 0 0; }
+  header h1 span { color:var(--muted); font-weight:400; font-size:13px; margin-left:8px; }
+  select, button, input { font:inherit; color:inherit; background:var(--panel);
+           border:1px solid var(--line); border-radius:6px; padding:6px 9px; }
+  button { cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  button:disabled { opacity:.5; cursor:default; }
+  .wrap { max-width:1320px; margin:0 auto; padding:16px; }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; min-width:0; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 10px; }
+  #summary { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:16px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .stat b { display:block; font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--muted); font-size:12px; }
+  main { display:grid; grid-template-columns: 230px minmax(0, 0.9fr) minmax(0, 1.3fr); gap:16px; align-items:start; }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } #list { max-height:220px; } }
+  #list { max-height:78vh; overflow-y:auto; margin:0 -6px; }
+  .row { display:flex; gap:8px; align-items:center; width:100%; text-align:left; border:0; background:none;
+         padding:5px 6px; border-radius:6px; font-variant-numeric:tabular-nums; }
+  .row:hover { background:var(--code); }
+  .row.on { background:var(--code); font-weight:600; }
+  .row small { margin-left:auto; color:var(--muted); font-weight:400; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--line); flex:none; }
+  .dot.ok { background:var(--ok); } .dot.bad { background:var(--bad); }
+  #image { width:100%; border-radius:6px; border:1px solid var(--line); background:#fff; display:block; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; color:var(--muted); font-weight:500; padding:4px 8px 4px 0; }
+  td { padding:6px 8px 6px 0; border-top:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere; }
+  td.label { color:var(--muted); }
+  td.ok, td.bad, td.near, td:first-child { white-space:nowrap; overflow-wrap:normal; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); } .near { color:var(--warn); }
+  .badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; border:1px solid var(--line); }
+  .badge.review { border-color:var(--warn); color:var(--warn); }
+  .badge.auto { border-color:var(--ok); color:var(--ok); }
+  .flags { color:var(--muted); font-size:13px; margin:8px 0 12px; }
+  .flags code { background:var(--code); padding:1px 6px; border-radius:4px; margin-right:4px; display:inline-block; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+  .note { color:var(--muted); font-size:12px; }
+  form.review { display:grid; grid-template-columns: 80px minmax(0, 1fr); gap:6px 10px; align-items:center; margin-top:8px; }
+  form.review input { width:100%; }
+  pre { margin:8px 0 0; padding:10px; background:var(--code); border-radius:6px; font-size:12px;
+        overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow-y:auto; }
+  details summary { cursor:pointer; color:var(--muted); font-size:13px; margin-top:12px; }
+  .side { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .error { color:var(--bad); font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tally <span>receipt extraction review &middot; SROIE test set</span></h1>
+  <label>Extractor <select id="run"></select></label>
+  <label>Show <select id="filter">
+    <option value="all">all receipts</option>
+    <option value="review">sent to review</option>
+    <option value="wrong">wrong date or total</option>
+    <option value="missed">wrong but auto-accepted</option>
+  </select></label>
+</header>
+<div class="wrap">
+  <div id="summary"></div>
+  <main>
+    <section>
+      <h2 id="listTitle">Receipts</h2>
+      <div id="list"></div>
+    </section>
+    <section>
+      <h2>Receipt image</h2>
+      <img id="image" alt="Scanned receipt">
+    </section>
+    <div class="side">
+      <section>
+        <h2 id="detailTitle">Extraction</h2>
+        <div id="detail"><div class="note">Pick a receipt from the list.</div></div>
+      </section>
+      <section>
+        <h2>Human review</h2>
+        <div id="review"><div class="note">Corrections you save here are stored separately and never change the scores.</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text; return n; };
+const pct = (x) => (x * 100).toFixed(1) + "%";
+const FIELDS = ["company", "date", "address", "total"];
+let rows = [], current = null;
+
+async function api(path, options) {
+  const res = await fetch(path, options);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || ("Request failed: " + res.status));
+  return body;
+}
+const run = () => $("run").value;
+
+async function loadRuns(select) {
+  const runs = await api("/api/runs");
+  const keep = select || $("run").value;
+  $("run").replaceChildren(...runs.map(r => { const o = el("option", "", r.label + " (" + r.receipts + ")"); o.value = r.label; return o; }));
+  if (runs.some(r => r.label === keep)) $("run").value = keep;
+}
+async function loadSummary() {
+  const s = await api("/api/summary?run=" + encodeURIComponent(run()));
+  const box = $("summary"); box.textContent = "";
+  const stat = (value, label) => { const d = el("div", "stat"); d.append(el("b", "", value), el("span", "", label)); box.append(d); };
+  stat(s.n + " / " + s.total_receipts, "receipts scored");
+  if (!s.n) return;
+  for (const f of FIELDS) stat(pct(s.overall.fields[f].normalized), f + " correct");
+  const r = s.routing["date and total"];
+  stat(pct(r.auto_n / s.n), "auto-accepted");
+  stat(pct(r.auto_accuracy), "auto-accepted with right date and total");
+  stat(r.errors_caught + " of " + r.errors, "wrong date or total caught by review");
+}
+function visible(r) {
+  const f = $("filter").value;
+  if (f === "review") return r.status === "review";
+  if (f === "wrong") return r.correct === false;
+  if (f === "missed") return r.correct === false && r.status === "auto";
+  return true;
+}
+async function loadList() {
+  rows = await api("/api/receipts?run=" + encodeURIComponent(run()));
+  const shown = rows.filter(visible);
+  $("listTitle").textContent = "Receipts (" + shown.length + ")";
+  const list = $("list"); list.textContent = "";
+  for (const r of shown) {
+    const b = el("button", "row" + (r.key === current ? " on" : ""));
+    b.append(el("span", "dot" + (r.correct === true ? " ok" : r.correct === false ? " bad" : "")), el("span", "", r.key));
+    b.append(el("small", "", r.status === "review" ? "review" : r.status === "not_run" ? "not run" : (r.reviewed ? "checked" : "")));
+    b.onclick = () => show(r.key);
+    list.append(b);
+  }
+  if (!shown.length) list.append(el("div", "note", "Nothing matches this filter."));
+  if (shown.length && !shown.some(r => r.key === current)) show(shown[0].key);
+}
+function verdict(score) {
+  if (score.normalized) return ["ok", "correct"];
+  if (score.near) return ["near", "near match"];
+  return ["bad", "wrong"];
+}
+async function show(key) {
+  current = key;
+  for (const b of document.querySelectorAll(".row")) b.classList.toggle("on", b.children[1].textContent === key);
+  $("image").src = "/api/receipts/" + key + "/image";
+  const d = await api("/api/receipts/" + key);
+  if (current !== key) return;
+  $("detailTitle").textContent = "Extraction · " + key;
+  const box = $("detail"); box.textContent = "";
+  const result = d.runs[run()];
+  if (!result) {
+    box.append(el("div", "note", "This extractor has not been run on this receipt yet."));
+  } else {
+    const head = el("div");
+    head.append(el("span", "badge " + (result.flags.length ? "review" : "auto"),
+      result.flags.length ? "Sent to human review" : "Auto-accepted"));
+    box.append(head);
+    const flags = el("div", "flags");
+    if (result.flags.length) { flags.append("Flags: "); for (const f of result.flags) flags.append(el("code", "", f)); }
+    else flags.textContent = "No validation flags: every value is supported by the receipt text.";
+    box.append(flags);
+    const table = el("table"), hr = el("tr");
+    for (const h of ["Field", "Extracted", "Dataset label", "Result"]) hr.append(el("th", "", h));
+    table.append(hr);
+    for (const f of FIELDS) {
+      const tr = el("tr"), [cls, word] = verdict(result.scores[f]);
+      tr.append(el("td", "label", f), el("td", "", result.fields[f] || "—"), el("td", "label", d.truth[f]), el("td", cls, word));
+      table.append(tr);
+    }
+    box.append(table);
+    if (result.usage && result.usage.prompt_tokens !== undefined)
+      box.append(el("div", "note", result.usage.prompt_tokens + " tokens in, " + result.usage.completion_tokens +
+        " out, " + result.usage.latency_ms + " ms"));
+  }
+  const actions = el("div", "actions"), go = el("button", "", "Run the model on this receipt now"), msg = el("span", "note");
+  go.onclick = async () => {
+    go.disabled = true; msg.className = "note"; msg.textContent = "Calling the model…";
+    try { const out = await api("/api/receipts/" + key + "/extract", {method: "POST"});
+          await loadRuns(out.run); await Promise.all([loadSummary(), loadList()]); await show(key); }
+    catch (err) { msg.className = "error"; msg.textContent = err.message; go.disabled = false; }
+  };
+  actions.append(go, msg); box.append(actions);
+  const ocr = el("details"); ocr.append(el("summary", "", "OCR text the extractor was given"), el("pre", "", d.text)); box.append(ocr);
+  renderReview(key, d, result);
+}
+function renderReview(key, d, result) {
+  const box = $("review"); box.textContent = "";
+  const saved = d.review;
+  box.append(el("div", "note", saved ? "Reviewed " + saved.reviewed_at.replace("T", " ").slice(0, 16) + " UTC. You can edit and save again."
+    : "Check the values against the image, correct anything wrong, then approve. Saved corrections never change the scores."));
+  const form = el("form", "review"), inputs = {};
+  for (const f of FIELDS) {
+    const input = el("input"); input.value = saved ? saved.fields[f] : (result ? result.fields[f] : ""); input.id = "rv-" + f;
+    const label = el("label", "", f); label.htmlFor = input.id; inputs[f] = input; form.append(label, input);
+  }
+  const save = el("button", "primary", saved ? "Save changes" : "Approve"), msg = el("span", "note");
+  form.append(el("span"), (() => { const w = el("div", "actions"); w.append(save, msg); return w; })());
+  form.onsubmit = async (e) => {
+    e.preventDefault(); save.disabled = true;
+    try { await api("/api/receipts/" + key + "/review", {method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({fields: Object.fromEntries(FIELDS.map(f => [f, inputs[f].value]))})});
+          await loadList(); await show(key); }
+    catch (err) { msg.className = "error"; msg.textContent = err.message; save.disabled = false; }
+  };
+  box.append(form);
+}
+$("run").onchange = async () => { await Promise.all([loadSummary(), loadList()]); if (current) show(current); };
+$("filter").onchange = loadList;
+(async () => { try { await loadRuns(); await Promise.all([loadSummary(), loadList()]); }
+  catch (err) { $("detail").replaceChildren(el("div", "error", err.message)); } })();
+</script>
+</body>
+</html>
