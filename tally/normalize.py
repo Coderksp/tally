@@ -20,8 +20,8 @@ _MON = r"(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*"
 _YEAR = r"(?P<y>(?:19[89]|20\d)\d|\d{2})"
 _END = r"(?=\D|$|\d{1,2}[:.]\d{2})"
 _DATE_PATTERNS = [
-    re.compile(r"(?<!\d)(?P<y>(?:19[89]|20\d)\d)[-/.](?P<m>\d{1,2})[-/.](?P<d>\d{2}|\d)" + _END),
-    re.compile(r"(?<!\d)(?P<d>\d{1,2})[-/.](?P<m>\d{1,2})[-/.]" + _YEAR + _END),
+    re.compile(r"(?<!\d)(?P<y>(?:19[89]|20\d)\d)(?P<s>[-/.])(?P<m>\d{1,2})(?P=s)(?P<d>\d{2}|\d)" + _END),
+    re.compile(r"(?<!\d)(?P<d>\d{1,2})(?P<s>[-/.])(?P<m>\d{1,2})(?P=s)" + _YEAR + _END),
     re.compile(r"(?<!\d)(?P<d>\d{1,2})[-/. ]?(?P<mon>" + _MON + r")[-/., ]{0,2}" + _YEAR + _END, re.I),
     re.compile(r"(?P<mon>" + _MON + r")[-/. ]?(?P<d>\d{1,2}),?[-/. ]?(?P<y>(?:19[89]|20\d)\d)" + _END, re.I),
 ]

@@ -39,6 +39,16 @@ def load_run(path: Path) -> dict[str, dict]:
     return {r["key"]: r for r in records}
 
 
+def current_flags(record: dict, receipt: Receipt) -> list[str]:
+    """Flags for a saved result under today's validation rules.
+
+    Problems found while reading the model's reply are kept from the run. Validation flags
+    are recomputed from the saved fields, so fixing a validation rule never needs a rerun.
+    """
+    kept = [f for f in record.get("flags", []) if f.startswith("reply:") or f.endswith(":wrong_type")]
+    return kept + validate(record["fields"], receipt.text)
+
+
 def run_baseline(receipts: list[Receipt], path: Path) -> None:
     with path.open("w", encoding="utf-8") as out:
         for receipt in receipts:
@@ -85,7 +95,7 @@ def _pct(x: float) -> str:
 
 def build_report(label: str, records: dict[str, dict], receipts: list[Receipt],
                  price_in: float = 0.0, price_out: float = 0.0) -> tuple[str, dict]:
-    rows = [(r, records[r.key]) for r in receipts if r.key in records]
+    rows = [(r, {**records[r.key], "flags": current_flags(records[r.key], r)}) for r in receipts if r.key in records]
     scored = [score_document(rec["fields"], r.truth) for r, rec in rows]
     overall = aggregate(scored)
     n = overall["n"]

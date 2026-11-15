@@ -23,7 +23,7 @@ from .data import DEFAULT_PATH, FIELDS, Receipt, load_receipts
 from .extract import extract
 from .llm import LLM, LLMError, OpenAICompatLLM
 from .ocr import OCR_PATH
-from .run import RUNS_DIR, build_report, load_run
+from .run import RUNS_DIR, build_report, current_flags, load_run
 from .score import score_document
 from .validate import validate
 
@@ -113,7 +113,7 @@ class State:
 
 def _view(record: dict, receipt: Receipt) -> dict:
     scores = score_document(record["fields"], receipt.truth)
-    return {"fields": record["fields"], "flags": record["flags"], "scores": scores,
+    return {"fields": record["fields"], "flags": current_flags(record, receipt), "scores": scores,
             "usage": {k: record[k] for k in ("prompt_tokens", "completion_tokens", "latency_ms") if k in record}}
 
 
@@ -144,7 +144,7 @@ def create_app(*, parquet: Path = DEFAULT_PATH, ocr_path: Path = OCR_PATH, runs_
             row = {"key": key, "status": "not_run", "correct": None, "reviewed": key in reviewed}
             if record:
                 scores = score_document(record["fields"], receipt.truth)
-                row["status"] = "review" if record["flags"] else "auto"
+                row["status"] = "review" if current_flags(record, receipt) else "auto"
                 row["correct"] = all(scores[f]["normalized"] for f in ("date", "total"))
                 row["all_correct"] = all(scores[f]["near"] for f in FIELDS)
             rows.append(row)

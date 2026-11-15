@@ -7,8 +7,9 @@ person.
 Built on the public [SROIE](https://rrc.cvc.uab.es/?ch=13) receipt dataset (361 test
 receipts with human labels), so every claim below can be checked against real data.
 
-**Status: in progress.** The pipeline, review UI and tests are complete. The full benchmark
-is still being run; see [Results so far](#results-so-far) for what has and has not been measured.
+**Status: first results.** The pipeline, review UI and tests are complete. Two models have
+been scored on the first 117 of 361 receipts; the runs stopped at the free tier's daily token
+limit and resume from there. See [Results](#results).
 
 ## Pipeline
 
@@ -58,21 +59,65 @@ that hid the real date after it.
 **Enlarging the images did not help.** On 16 receipts, OCR at 2x size took twice as long
 (21 s against 12 s per image on a laptop CPU) and found slightly fewer labels.
 
-## Results so far
+## Results
 
-| Extractor | Text source | Receipts | Company | Date | Address | Total |
-|---|---|---|---|---|---|---|
-| Rule-based baseline | dataset text (truncated) | 361 | 63.2% | 97.5% | 1.7% | 87.8% |
-
+All three extractors on the **same 117 receipts**, reading this project's own OCR text.
 "Same value" accuracy: equal amounts, equal dates, text equal ignoring case, spacing and
 punctuation.
 
-Not measured yet:
+| Extractor | Company | Date | Address | Total |
+|---|---|---|---|---|
+| Rule-based baseline | 35.0% | 89.7% | 12.8% | 88.0% |
+| openai/gpt-oss-20b | 61.5% | 93.2% | 53.8% | 94.9% |
+| openai/gpt-oss-120b | 63.2% | 91.5% | 52.1% | 94.0% |
+| *Label present in the OCR text* | *76.1%* | *90.6%* | *58.1%* | *95.7%* |
 
-- The baseline and the LLM on this project's own OCR text, for all 361 receipts. OCR is
-  about a quarter done.
-- Review routing quality (accuracy of auto-accepted receipts, share of errors caught).
-- Cost per receipt across models. One early call used about 640 input and 170 output tokens.
+The last row is how often the correct answer appears in the OCR output at all. It is the
+ceiling for an extractor that only copies from the text.
+
+117 receipts is a small sample: one receipt is 0.9 points, so the two models are not
+distinguishable here. Reports: [baseline (all 361)](results/baseline.md),
+[gpt-oss-20b](results/openai_gpt-oss-20b.md), [gpt-oss-120b](results/openai_gpt-oss-120b.md).
+
+### Review routing, judged on date and total
+
+| Extractor | Auto-accepted | Right among auto-accepted | Wrong receipts caught by review |
+|---|---|---|---|
+| Rule-based baseline | 101 of 117 (86%) | 89.1% | 13 of 24 |
+| openai/gpt-oss-20b | 91 of 117 (78%) | 98.9% | 13 of 14 |
+| openai/gpt-oss-120b | 93 of 117 (79%) | 97.8% | 15 of 17 |
+
+With gpt-oss-20b, a person checks 22% of receipts and the other 78% go through with one
+wrong date or total in 91.
+
+### What the numbers say
+
+- **OCR is the bottleneck, not the model.** For company and address the models score close
+  to the OCR ceiling. No prompt change will fix an address the OCR never read; a better OCR
+  engine or a vision model would.
+- **The model is worth it over rules, mostly for text fields.** Company goes from 35% to
+  62% and address from 13% to 54%. On dates the gain is small (90% to 93%).
+- **The model sometimes repairs OCR damage.** gpt-oss-20b scores 93.2% on dates where the
+  exact label date is found in only 90.6% of the OCR texts.
+- **Model size did not matter on this task.** The 20b and 120b models are within a receipt
+  or two of each other on every field.
+- **Cost.** About 620 tokens in and 180 to 210 out per receipt, with a median model time
+  under one second.
+
+### Bugs the benchmark found in this project's own code
+
+- A year followed directly by a clock time (`15/01/201911:05`) was not read as a date.
+- A false start (`19-18/01` inside `REG#19-18/01/2018`) hid the real date after it.
+- A date with an order number glued in front (`19-11/03/2018`) was read as 19 November 2003
+  because mixed separators were accepted. This one made a correct extraction score as wrong.
+
+Each has a test. Validation flags are recomputed when a report is built, so fixing a rule
+re-scores saved runs without calling the model again.
+
+### Not measured yet
+
+- The remaining 244 receipts for both models.
+- A stronger OCR engine or a vision model, which the ceiling row says is where the gain is.
 
 ## Quick start
 

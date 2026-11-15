@@ -134,3 +134,12 @@ def test_client_separates_a_daily_quota_from_an_ordinary_failure():
     with pytest.raises(LLMError) as info:
         _client(lambda r: httpx.Response(401, text="bad key in org_abcdef123456")).complete("s", "u")
     assert not isinstance(info.value, QuotaExhausted) and "org_[redacted]" in str(info.value)
+
+
+def test_saved_runs_are_rescored_with_current_validation_rules():
+    from tally.run import current_flags
+    receipt = receipts(1)[0]
+    stale = {"key": "R0", "fields": TRUTH, "flags": ["date:not_in_receipt", "reply:not_json"]}
+    assert current_flags(stale, receipt) == ["reply:not_json"]     # stale validation flag dropped, reply problem kept
+    _, summary = build_report("t", {"R0": stale}, [receipt])
+    assert summary["routing"]["date and total"]["review_n"] == 1

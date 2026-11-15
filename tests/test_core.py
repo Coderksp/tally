@@ -161,3 +161,9 @@ def test_dates_survive_ocr_gluing_the_time_onto_them():
 def test_a_false_start_does_not_hide_the_real_date_after_it():
     assert parse_date("ORD#90-REG#19-18/01/201817:09:21") == date(2018, 1, 18)
     assert [d for _, d in find_dates("REF 99/99/99 DATE 05/06/2018")] == [date(2018, 6, 5)]
+
+
+def test_numeric_dates_need_one_separator_throughout():
+    assert parse_date("19-11/03/2018") == date(2018, 3, 11)       # an order number glued in front
+    assert parse_date("11-03/2018") is None
+    assert parse_date("11.03.2018") == parse_date("11-03-2018") == date(2018, 3, 11)
